@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGENTS.md Wizard — AI Agent Config Generator</title>
+<meta name="description" content="Generate production-ready CLAUDE.md, AGENTS.md, and .cursorrules files for your AI coding agent. Step-by-step wizard, no signup required.">
+<style>
+:root {
+  --bg: #241200;
+  --bg-deep: #1A0D00;
+  --gold: #DDC165;
+  --gold-light: #FFE9A3;
+  --gold-dim: rgba(221, 193, 101, 0.15);
+  --orange: #E5591C;
+  --orange-glow: rgba(229, 89, 28, 0.3);
+  --surface: #2d1a08;
+  --surface-hover: #3a2210;
+  --border: #4a3018;
+  --border-active: #DDC165;
+  --text: #e8dcc8;
+  --text-dim: #9a8a72;
+  --text-muted: #6a5a42;
+  --code-bg: #1a0f04;
+  --success: #4ade80;
+  --error: #f87171;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-glow: 0 0 30px rgba(221, 193, 101, 0.08);
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Background animation */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(229, 89, 28, 0.06), transparent),
+    radial-gradient(ellipse 60% 80% at 80% 90%, rgba(221, 193, 101, 0.04), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 48px 24px 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.header h1 {
+  font-size: 2.4rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--orange));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+}
+
+.header .subtitle {
+  color: var(--text-dim);
+  font-size: 1.05rem;
+  margin-top: 8px;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+
+/* Layout */
+.app {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Progress bar */
+.progress-container {
+  margin: 32px 0 40px;
+  position: relative;
+}
+
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.progress-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  transition: var(--transition);
+  position: relative;
+}
+
+.progress-step.active .progress-dot {
+  border-color: var(--gold);
+  background: var(--gold-dim);
+  color: var(--gold);
+  box-shadow: 0 0 20px rgba(221, 193, 101, 0.2);
+}
+
+.progress-step.completed .progress-dot {
+  border-color: var(--success);
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--success);
+}
+
+.progress-step.completed .progress-dot::after {
+  content: '✓';
+  font-size: 0.9rem;
+}
+
+.progress-step.completed .progress-dot .step-num { display: none; }
+
+.progress-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: var(--transition);
+  text-align: center;
+}
+
+.progress-step.active .progress-label { color: var(--gold); }
+.progress-step.completed .progress-label { color: var(--text-dim); }
+
+.progress-line {
+  position: absolute;
+  top: 18px;
+  left: 36px;
+  right: 36px;
+  height: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--success), var(--gold));
+  transition: width 0.5s ease;
+  border-radius: 2px;
+}
+
+/* Cards / Steps */
+.step-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  box-shadow: var(--shadow);
+  animation: fadeSlideIn 0.35s ease;
+  display: none;
+}
+
+.step-card.active { display: block; }
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.step-card h2 {
+  font-size: 1.4rem;
+  color: var(--gold-light);
+  margin-bottom: 6px;
+}
+
+.step-card .step-desc {
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+/* Form elements */
+.field {
+  margin-bottom: 22px;
+}
+
+.field label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.field input[type="text"],
+.field textarea,
+.field select {
+  width: 100%;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: var(--transition);
+  outline: none;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(221, 193, 101, 0.1);
+}
+
+.field textarea {
+  min-height: 80px;
+  resize: vertical;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.field select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%239a8a72' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+/* Chip/tag selector */
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: none;
+}
+
+.chip:hover {
+  border-color: var(--gold);
+  color: var(--text);
+}
+
+.chip.selected {
+  border-color: var(--gold);
+  background: var(--gold-dim);
+  color: var(--gold-light);
+  box-shadow: 0 0 12px rgba(221, 193, 101, 0.1);
+}
+
+.chip.selected.multi::before {
+  content: '✓ ';
+  font-size: 0.75rem;
+}
+
+/* Toggle */
+.toggle-group {
+  display: flex;
+  gap: 8px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+}
+
+.toggle-btn:hover { border-color: var(--text-muted); }
+
+.toggle-btn.selected {
+  border-color: var(--gold);
+  background: var(--gold-dim);
+  color: var(--gold-light);
+}
+
+/* Buttons */
+.btn-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 32px;
+  gap: 12px;
+}
+
+.btn {
+  padding: 12px 28px;
+  border-radius: var(--radius);
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.btn-back {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.btn-back:hover { border-color: var(--text-muted); color: var(--text); }
+
+.btn-next {
+  background: linear-gradient(135deg, var(--gold), #c9a84e);
+  color: var(--bg-deep);
+  margin-left: auto;
+}
+
+.btn-next:hover {
+  box-shadow: 0 0 24px rgba(221, 193, 101, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-next:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-generate {
+  background: linear-gradient(135deg, var(--orange), #c94a15);
+  color: #fff;
+  width: 100%;
+  padding: 16px;
+  font-size: 1.05rem;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.btn-generate:hover {
+  box-shadow: 0 0 32px var(--orange-glow);
+  transform: translateY(-1px);
+}
+
+/* Output step */
+.output-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: var(--code-bg);
+  border-radius: var(--radius);
+  padding: 4px;
+}
+
+.output-tab {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.output-tab:hover { color: var(--text); }
+
+.output-tab.active {
+  background: var(--surface);
+  color: var(--gold-light);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.output-code {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 500px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.output-code::-webkit-scrollbar { width: 6px; }
+.output-code::-webkit-scrollbar-track { background: transparent; }
+.output-code::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.copy-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  z-index: 2;
+}
+
+.copy-btn:hover { border-color: var(--gold); color: var(--gold); }
+.copy-btn.copied { border-color: var(--success); color: var(--success); }
+
+.download-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.btn-download {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  text-align: center;
+}
+
+.btn-download:hover {
+  border-color: var(--gold);
+  background: var(--gold-dim);
+  color: var(--gold-light);
+}
+
+/* Gallery */
+.gallery-section {
+  margin-top: 56px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+}
+
+.gallery-section h2 {
+  font-size: 1.3rem;
+  color: var(--gold-light);
+  margin-bottom: 6px;
+}
+
+.gallery-section .gallery-desc {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+.gallery-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.gallery-filter {
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.gallery-filter:hover { border-color: var(--text-muted); }
+
+.gallery-filter.active {
+  border-color: var(--gold);
+  background: var(--gold-dim);
+  color: var(--gold-light);
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.gallery-card {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.gallery-card:hover {
+  border-color: var(--gold);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+.gallery-card h3 {
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.gallery-card .gallery-stack {
+  font-size: 0.78rem;
+  color: var(--orange);
+  margin-bottom: 8px;
+}
+
+.gallery-card .gallery-preview {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Draft indicator */
+.draft-indicator {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 100;
+}
+
+.draft-indicator.visible { opacity: 1; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .header h1 { font-size: 1.8rem; }
+  .step-card { padding: 24px; }
+  .progress-label { display: none; }
+  .progress-dot { width: 30px; height: 30px; font-size: 0.7rem; }
+  .btn-row { flex-direction: column; }
+  .btn-back { order: 1; }
+  .btn-next { margin-left: 0; }
+  .gallery-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>AGENTS.md Wizard</h1>
+  <p class="subtitle">Generate a production-ready config for your AI coding agent. No signup, no backend — everything runs in your browser.</p>
+</div>
+
+<div class="app">
+
+  <!-- Progress -->
+  <div class="progress-container">
+    <div class="progress-line"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-steps" id="progressSteps"></div>
+  </div>
+
+  <!-- Step 1: Agent -->
+  <div class="step-card active" data-step="0">
+    <h2>Choose Your Agent</h2>
+    <p class="step-desc">Which AI coding tool are you configuring?</p>
+    <div class="field">
+      <label>Agent</label>
+      <div class="chip-group" data-field="agent" data-mode="single">
+        <div class="chip" data-value="claude-code">Claude Code</div>
+        <div class="chip" data-value="cursor">Cursor</div>
+        <div class="chip" data-value="cline">Cline</div>
+        <div class="chip" data-value="windsurf">Windsurf</div>
+        <div class="chip" data-value="copilot">GitHub Copilot</div>
+        <div class="chip" data-value="aider">Aider</div>
+        <div class="chip" data-value="other">Other</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-next" onclick="nextStep()" disabled>Next</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Stack -->
+  <div class="step-card" data-step="1">
+    <h2>Your Tech Stack</h2>
+    <p class="step-desc">Select your primary languages and frameworks. Pick all that apply.</p>
+    <div class="field">
+      <label>Languages</label>
+      <div class="chip-group" data-field="languages" data-mode="multi">
+        <div class="chip multi" data-value="typescript">TypeScript</div>
+        <div class="chip multi" data-value="javascript">JavaScript</div>
+        <div class="chip multi" data-value="python">Python</div>
+        <div class="chip multi" data-value="go">Go</div>
+        <div class="chip multi" data-value="rust">Rust</div>
+        <div class="chip multi" data-value="swift">Swift</div>
+        <div class="chip multi" data-value="java">Java</div>
+        <div class="chip multi" data-value="kotlin">Kotlin</div>
+        <div class="chip multi" data-value="c-sharp">C#</div>
+        <div class="chip multi" data-value="ruby">Ruby</div>
+        <div class="chip multi" data-value="php">PHP</div>
+        <div class="chip multi" data-value="elixir">Elixir</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Frameworks / Platforms</label>
+      <div class="chip-group" data-field="frameworks" data-mode="multi">
+        <div class="chip multi" data-value="react">React</div>
+        <div class="chip multi" data-value="nextjs">Next.js</div>
+        <div class="chip multi" data-value="vue">Vue</div>
+        <div class="chip multi" data-value="svelte">Svelte</div>
+        <div class="chip multi" data-value="angular">Angular</div>
+        <div class="chip multi" data-value="nodejs">Node.js</div>
+        <div class="chip multi" data-value="fastapi">FastAPI</div>
+        <div class="chip multi" data-value="django">Django</div>
+        <div class="chip multi" data-value="flask">Flask</div>
+        <div class="chip multi" data-value="rails">Rails</div>
+        <div class="chip multi" data-value="swiftui">SwiftUI</div>
+        <div class="chip multi" data-value="ios">iOS (UIKit)</div>
+        <div class="chip multi" data-value="android">Android</div>
+        <div class="chip multi" data-value="flutter">Flutter</div>
+        <div class="chip multi" data-value="tauri">Tauri</div>
+        <div class="chip multi" data-value="electron">Electron</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="prevStep()">Back</button>
+      <button class="btn btn-next" onclick="nextStep()" disabled>Next</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Project Structure -->
+  <div class="step-card" data-step="2">
+    <h2>Project Structure</h2>
+    <p class="step-desc">Tell the agent about your project layout and conventions.</p>
+    <div class="field">
+      <label>Repository Type</label>
+      <div class="toggle-group" data-field="repoType" data-mode="single">
+        <div class="toggle-btn" data-value="monorepo">Monorepo</div>
+        <div class="toggle-btn" data-value="single">Single Package</div>
+        <div class="toggle-btn" data-value="multi">Multi-Repo</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Package Manager</label>
+      <div class="chip-group" data-field="packageManager" data-mode="single">
+        <div class="chip" data-value="npm">npm</div>
+        <div class="chip" data-value="pnpm">pnpm</div>
+        <div class="chip" data-value="yarn">yarn</div>
+        <div class="chip" data-value="bun">bun</div>
+        <div class="chip" data-value="pip">pip</div>
+        <div class="chip" data-value="uv">uv</div>
+        <div class="chip" data-value="poetry">Poetry</div>
+        <div class="chip" data-value="cargo">Cargo</div>
+        <div class="chip" data-value="go-mod">go mod</div>
+        <div class="chip" data-value="spm">Swift PM</div>
+        <div class="chip" data-value="cocoapods">CocoaPods</div>
+        <div class="chip" data-value="gradle">Gradle</div>
+        <div class="chip" data-value="maven">Maven</div>
+        <div class="chip" data-value="none">None / Other</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Testing Framework</label>
+      <div class="chip-group" data-field="testing" data-mode="multi">
+        <div class="chip multi" data-value="jest">Jest</div>
+        <div class="chip multi" data-value="vitest">Vitest</div>
+        <div class="chip multi" data-value="playwright">Playwright</div>
+        <div class="chip multi" data-value="cypress">Cypress</div>
+        <div class="chip multi" data-value="pytest">pytest</div>
+        <div class="chip multi" data-value="go-test">go test</div>
+        <div class="chip multi" data-value="cargo-test">cargo test</div>
+        <div class="chip multi" data-value="xctest">XCTest</div>
+        <div class="chip multi" data-value="junit">JUnit</div>
+        <div class="chip multi" data-value="rspec">RSpec</div>
+        <div class="chip multi" data-value="none">None</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Key Directories (optional)</label>
+      <input type="text" data-field="directories" placeholder="e.g. src/, packages/, apps/web, apps/api">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="prevStep()">Back</button>
+      <button class="btn btn-next" onclick="nextStep()">Next</button>
+    </div>
+  </div>
+
+  <!-- Step 4: Coding Style -->
+  <div class="step-card" data-step="3">
+    <h2>Coding Style</h2>
+    <p class="step-desc">How should the agent write code in your project?</p>
+    <div class="field">
+      <label>Indentation</label>
+      <div class="toggle-group" data-field="indent" data-mode="single">
+        <div class="toggle-btn" data-value="2-spaces">2 Spaces</div>
+        <div class="toggle-btn" data-value="4-spaces">4 Spaces</div>
+        <div class="toggle-btn" data-value="tabs">Tabs</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Naming Convention</label>
+      <div class="toggle-group" data-field="naming" data-mode="single">
+        <div class="toggle-btn" data-value="camelCase">camelCase</div>
+        <div class="toggle-btn" data-value="snake_case">snake_case</div>
+        <div class="toggle-btn" data-value="PascalCase">PascalCase</div>
+        <div class="toggle-btn" data-value="mixed">Mixed / Language Default</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Type Safety Preference</label>
+      <div class="toggle-group" data-field="typeSafety" data-mode="single">
+        <div class="toggle-btn" data-value="strict">Strict Types</div>
+        <div class="toggle-btn" data-value="moderate">Moderate</div>
+        <div class="toggle-btn" data-value="relaxed">Relaxed</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Error Handling Style</label>
+      <div class="toggle-group" data-field="errorHandling" data-mode="single">
+        <div class="toggle-btn" data-value="explicit">Explicit (Result types, try/catch)</div>
+        <div class="toggle-btn" data-value="minimal">Minimal (let it crash)</div>
+        <div class="toggle-btn" data-value="defensive">Defensive (validate everything)</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Additional Style Rules (optional)</label>
+      <textarea data-field="styleRules" placeholder="e.g. Always use early returns. Prefer const over let. No default exports."></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="prevStep()">Back</button>
+      <button class="btn btn-next" onclick="nextStep()">Next</button>
+    </div>
+  </div>
+
+  <!-- Step 5: Agent Behavior -->
+  <div class="step-card" data-step="4">
+    <h2>Agent Behavior</h2>
+    <p class="step-desc">Control how the agent communicates and operates.</p>
+    <div class="field">
+      <label>Communication Style</label>
+      <div class="toggle-group" data-field="commStyle" data-mode="single">
+        <div class="toggle-btn" data-value="concise">Concise &amp; Direct</div>
+        <div class="toggle-btn" data-value="detailed">Detailed Explanations</div>
+        <div class="toggle-btn" data-value="teaching">Teaching Mode</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>When Uncertain</label>
+      <div class="toggle-group" data-field="uncertainty" data-mode="single">
+        <div class="toggle-btn" data-value="ask">Ask Before Acting</div>
+        <div class="toggle-btn" data-value="best-guess">Best Guess + Explain</div>
+        <div class="toggle-btn" data-value="flag">Flag &amp; Continue</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Code Changes</label>
+      <div class="toggle-group" data-field="codeChanges" data-mode="single">
+        <div class="toggle-btn" data-value="minimal">Minimal (only what's asked)</div>
+        <div class="toggle-btn" data-value="suggest">Suggest Improvements</div>
+        <div class="toggle-btn" data-value="proactive">Proactive Refactoring</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Testing Expectations</label>
+      <div class="toggle-group" data-field="testExpect" data-mode="single">
+        <div class="toggle-btn" data-value="always">Always Write Tests</div>
+        <div class="toggle-btn" data-value="ask">Ask First</div>
+        <div class="toggle-btn" data-value="never">Skip Unless Asked</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Documentation</label>
+      <div class="toggle-group" data-field="docStyle" data-mode="single">
+        <div class="toggle-btn" data-value="inline">Inline Comments</div>
+        <div class="toggle-btn" data-value="jsdoc">JSDoc / Docstrings</div>
+        <div class="toggle-btn" data-value="minimal">Minimal (self-documenting)</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="prevStep()">Back</button>
+      <button class="btn btn-next" onclick="nextStep()">Next</button>
+    </div>
+  </div>
+
+  <!-- Step 6: Tools & Context -->
+  <div class="step-card" data-step="5">
+    <h2>Tools &amp; Context</h2>
+    <p class="step-desc">What tools and integrations does your project use?</p>
+    <div class="field">
+      <label>Linting / Formatting</label>
+      <div class="chip-group" data-field="linting" data-mode="multi">
+        <div class="chip multi" data-value="eslint">ESLint</div>
+        <div class="chip multi" data-value="prettier">Prettier</div>
+        <div class="chip multi" data-value="biome">Biome</div>
+        <div class="chip multi" data-value="ruff">Ruff</div>
+        <div class="chip multi" data-value="black">Black</div>
+        <div class="chip multi" data-value="rustfmt">rustfmt</div>
+        <div class="chip multi" data-value="swiftformat">SwiftFormat</div>
+        <div class="chip multi" data-value="gofmt">gofmt</div>
+        <div class="chip multi" data-value="none">None</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>CI / CD</label>
+      <div class="chip-group" data-field="ci" data-mode="multi">
+        <div class="chip multi" data-value="github-actions">GitHub Actions</div>
+        <div class="chip multi" data-value="gitlab-ci">GitLab CI</div>
+        <div class="chip multi" data-value="vercel">Vercel</div>
+        <div class="chip multi" data-value="netlify">Netlify</div>
+        <div class="chip multi" data-value="docker">Docker</div>
+        <div class="chip multi" data-value="k8s">Kubernetes</div>
+        <div class="chip multi" data-value="none">None</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Database</label>
+      <div class="chip-group" data-field="database" data-mode="multi">
+        <div class="chip multi" data-value="postgres">PostgreSQL</div>
+        <div class="chip multi" data-value="mysql">MySQL</div>
+        <div class="chip multi" data-value="sqlite">SQLite</div>
+        <div class="chip multi" data-value="mongodb">MongoDB</div>
+        <div class="chip multi" data-value="redis">Redis</div>
+        <div class="chip multi" data-value="supabase">Supabase</div>
+        <div class="chip multi" data-value="firebase">Firebase</div>
+        <div class="chip multi" data-value="prisma">Prisma</div>
+        <div class="chip multi" data-value="drizzle">Drizzle</div>
+        <div class="chip multi" data-value="none">None</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Additional Context / Custom Rules (optional)</label>
+      <textarea data-field="customRules" placeholder="e.g. We use a custom logging framework at src/lib/logger.ts. Always import from @/lib, not relative paths. The API follows REST conventions."></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="prevStep()">Back</button>
+      <button class="btn btn-next" onclick="nextStep()">Next</button>
+    </div>
+  </div>
+
+  <!-- Step 7: Output -->
+  <div class="step-card" data-step="6">
+    <h2>Your Config Is Ready</h2>
+    <p class="step-desc">Copy or download your generated config file. Switch tabs to see different formats.</p>
+    <div class="output-tabs" id="outputTabs">
+      <button class="output-tab active" data-format="claude-md">CLAUDE.md</button>
+      <button class="output-tab" data-format="agents-md">AGENTS.md</button>
+      <button class="output-tab" data-format="cursorrules">.cursorrules</button>
+    </div>
+    <div style="position: relative;">
+      <button class="copy-btn" onclick="copyOutput()">Copy</button>
+      <div class="output-code" id="outputCode"></div>
+    </div>
+    <div class="download-row">
+      <button class="btn-download" onclick="downloadFile('claude-md')">Download CLAUDE.md</button>
+      <button class="btn-download" onclick="downloadFile('agents-md')">Download AGENTS.md</button>
+      <button class="btn-download" onclick="downloadFile('cursorrules')">Download .cursorrules</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-back" onclick="prevStep()">Back</button>
+      <button class="btn btn-next" onclick="startOver()" style="background: linear-gradient(135deg, var(--gold), #c9a84e); color: var(--bg-deep);">Start Over</button>
+    </div>
+  </div>
+
+  <!-- Gallery -->
+  <div class="gallery-section">
+    <h2>Community Templates</h2>
+    <p class="gallery-desc">Pre-built configs for popular stacks. Click to load into the wizard.</p>
+    <div class="gallery-filters" id="galleryFilters"></div>
+    <div class="gallery-grid" id="galleryGrid"></div>
+  </div>
+</div>
+
+<div class="draft-indicator" id="draftIndicator">Draft saved</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────
+const STEPS = ['Agent', 'Stack', 'Structure', 'Style', 'Behavior', 'Tools', 'Output'];
+let currentStep = 0;
+let formData = {};
+let activeFormat = 'claude-md';
+
+// ─── Templates Gallery ──────────────────────────────────────────────
+const TEMPLATES = [
+  {
+    name: 'TypeScript Monorepo',
+    stack: 'TypeScript, React, Next.js',
+    filter: 'typescript',
+    data: {
+      agent: 'claude-code', languages: ['typescript'], frameworks: ['react', 'nextjs', 'nodejs'],
+      repoType: 'monorepo', packageManager: 'pnpm', testing: ['vitest', 'playwright'],
+      indent: '2-spaces', naming: 'camelCase', typeSafety: 'strict', errorHandling: 'explicit',
+      commStyle: 'concise', uncertainty: 'ask', codeChanges: 'minimal', testExpect: 'always',
+      docStyle: 'minimal', linting: ['eslint', 'prettier'], ci: ['github-actions', 'vercel'],
+      database: ['postgres', 'prisma']
+    }
+  },
+  {
+    name: 'Python FastAPI',
+    stack: 'Python, FastAPI, PostgreSQL',
+    filter: 'python',
+    data: {
+      agent: 'claude-code', languages: ['python'], frameworks: ['fastapi'],
+      repoType: 'single', packageManager: 'uv', testing: ['pytest'],
+      indent: '4-spaces', naming: 'snake_case', typeSafety: 'strict', errorHandling: 'explicit',
+      commStyle: 'concise', uncertainty: 'ask', codeChanges: 'minimal', testExpect: 'always',
+      docStyle: 'jsdoc', linting: ['ruff', 'black'], ci: ['github-actions', 'docker'],
+      database: ['postgres']
+    }
+  },
+  {
+    name: 'Go Microservice',
+    stack: 'Go, gRPC, Docker',
+    filter: 'go',
+    data: {
+      agent: 'claude-code', languages: ['go'], frameworks: [],
+      repoType: 'single', packageManager: 'go-mod', testing: ['go-test'],
+      indent: 'tabs', naming: 'camelCase', typeSafety: 'strict', errorHandling: 'explicit',
+      commStyle: 'concise', uncertainty: 'ask', codeChanges: 'minimal', testExpect: 'always',
+      docStyle: 'inline', linting: ['gofmt'], ci: ['github-actions', 'docker', 'k8s'],
+      database: ['postgres', 'redis']
+    }
+  },
+  {
+    name: 'iOS SwiftUI',
+    stack: 'Swift, SwiftUI, XCTest',
+    filter: 'swift',
+    data: {
+      agent: 'claude-code', languages: ['swift'], frameworks: ['swiftui'],
+      repoType: 'single', packageManager: 'spm', testing: ['xctest'],
+      indent: '4-spaces', naming: 'camelCase', typeSafety: 'strict', errorHandling: 'explicit',
+      commStyle: 'concise', uncertainty: 'ask', codeChanges: 'minimal', testExpect: 'always',
+      docStyle: 'jsdoc', linting: ['swiftformat'], ci: ['github-actions'],
+      database: ['sqlite']
+    }
+  },
+  {
+    name: 'Rust CLI Tool',
+    stack: 'Rust, Cargo, clap',
+    filter: 'rust',
+    data: {
+      agent: 'claude-code', languages: ['rust'], frameworks: [],
+      repoType: 'single', packageManager: 'cargo', testing: ['cargo-test'],
+      indent: '4-spaces', naming: 'snake_case', typeSafety: 'strict', errorHandling: 'explicit',
+      commStyle: 'concise', uncertainty: 'ask', codeChanges: 'minimal', testExpect: 'always',
+      docStyle: 'jsdoc', linting: ['rustfmt'], ci: ['github-actions'],
+      database: ['none']
+    }
+  },
+  {
+    name: 'React SPA + Supabase',
+    stack: 'TypeScript, React, Supabase',
+    filter: 'typescript',
+    data: {
+      agent: 'cursor', languages: ['typescript'], frameworks: ['react'],
+      repoType: 'single', packageManager: 'npm', testing: ['vitest', 'playwright'],
+      indent: '2-spaces', naming: 'camelCase', typeSafety: 'strict', errorHandling: 'explicit',
+      commStyle: 'detailed', uncertainty: 'best-guess', codeChanges: 'suggest', testExpect: 'ask',
+      docStyle: 'jsdoc', linting: ['eslint', 'prettier'], ci: ['vercel'],
+      database: ['supabase']
+    }
+  },
+  {
+    name: 'Django + HTMX',
+    stack: 'Python, Django, HTMX',
+    filter: 'python',
+    data: {
+      agent: 'claude-code', languages: ['python', 'javascript'], frameworks: ['django'],
+      repoType: 'single', packageManager: 'pip', testing: ['pytest'],
+      indent: '4-spaces', naming: 'snake_case', typeSafety: 'moderate', errorHandling: 'defensive',
+      commStyle: 'detailed', uncertainty: 'ask', codeChanges: 'suggest', testExpect: 'always',
+      docStyle: 'jsdoc', linting: ['ruff'], ci: ['github-actions', 'docker'],
+      database: ['postgres']
+    }
+  },
+  {
+    name: 'Vue 3 + Nuxt',
+    stack: 'TypeScript, Vue 3, Nuxt',
+    filter: 'typescript',
+    data: {
+      agent: 'cursor', languages: ['typescript'], frameworks: ['vue'],
+      repoType: 'single', packageManager: 'pnpm', testing: ['vitest', 'cypress'],
+      indent: '2-spaces', naming: 'camelCase', typeSafety: 'strict', errorHandling: 'explicit',
+      commStyle: 'concise', uncertainty: 'best-guess', codeChanges: 'minimal', testExpect: 'ask',
+      docStyle: 'inline', linting: ['eslint', 'prettier'], ci: ['vercel'],
+      database: ['supabase']
+    }
+  },
+  {
+    name: 'Svelte + Tailwind',
+    stack: 'TypeScript, SvelteKit, Tailwind',
+    filter: 'typescript',
+    data: {
+      agent: 'claude-code', languages: ['typescript'], frameworks: ['svelte'],
+      repoType: 'single', packageManager: 'pnpm', testing: ['vitest', 'playwright'],
+      indent: '2-spaces', naming: 'camelCase', typeSafety: 'strict', errorHandling: 'explicit',
+      commStyle: 'concise', uncertainty: 'flag', codeChanges: 'minimal', testExpect: 'always',
+      docStyle: 'minimal', linting: ['eslint', 'prettier'], ci: ['vercel'],
+      database: ['postgres', 'drizzle']
+    }
+  },
+  {
+    name: 'Ruby on Rails',
+    stack: 'Ruby, Rails, RSpec',
+    filter: 'ruby',
+    data: {
+      agent: 'claude-code', languages: ['ruby'], frameworks: ['rails'],
+      repoType: 'single', packageManager: 'none', testing: ['rspec'],
+      indent: '2-spaces', naming: 'snake_case', typeSafety: 'relaxed', errorHandling: 'defensive',
+      commStyle: 'detailed', uncertainty: 'ask', codeChanges: 'suggest', testExpect: 'always',
+      docStyle: 'inline', linting: ['none'], ci: ['github-actions', 'docker'],
+      database: ['postgres', 'redis']
+    }
+  },
+  {
+    name: 'Kotlin Android',
+    stack: 'Kotlin, Jetpack Compose',
+    filter: 'kotlin',
+    data: {
+      agent: 'claude-code', languages: ['kotlin'], frameworks: ['android'],
+      repoType: 'single', packageManager: 'gradle', testing: ['junit'],
+      indent: '4-spaces', naming: 'camelCase', typeSafety: 'strict', errorHandling: 'explicit',
+      commStyle: 'concise', uncertainty: 'ask', codeChanges: 'minimal', testExpect: 'always',
+      docStyle: 'jsdoc', linting: ['none'], ci: ['github-actions'],
+      database: ['sqlite']
+    }
+  },
+  {
+    name: 'Elixir Phoenix',
+    stack: 'Elixir, Phoenix, LiveView',
+    filter: 'elixir',
+    data: {
+      agent: 'claude-code', languages: ['elixir'], frameworks: [],
+      repoType: 'single', packageManager: 'none', testing: ['none'],
+      indent: '2-spaces', naming: 'snake_case', typeSafety: 'moderate', errorHandling: 'explicit',
+      commStyle: 'detailed', uncertainty: 'ask', codeChanges: 'suggest', testExpect: 'always',
+      docStyle: 'jsdoc', linting: ['none'], ci: ['github-actions', 'docker'],
+      database: ['postgres']
+    }
+  }
+];
+
+// ─── Init ────────────────────────────────────────────────────────────
+function init() {
+  renderProgress();
+  initChips();
+  initGallery();
+  loadDraft();
+  updateValidation();
+}
+
+// ─── Progress ────────────────────────────────────────────────────────
+function renderProgress() {
+  const container = document.getElementById('progressSteps');
+  container.innerHTML = STEPS.map((s, i) => `
+    <div class="progress-step ${i === currentStep ? 'active' : ''} ${i < currentStep ? 'completed' : ''}" onclick="goToStep(${i})">
+      <div class="progress-dot"><span class="step-num">${i + 1}</span></div>
+      <span class="progress-label">${s}</span>
+    </div>
+  `).join('');
+  const pct = currentStep === 0 ? 0 : (currentStep / (STEPS.length - 1)) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function goToStep(n) {
+  if (n > currentStep + 1 || n < 0) return;
+  if (n <= currentStep || n === currentStep + 1) {
+    currentStep = n;
+    showStep();
+  }
+}
+
+function showStep() {
+  document.querySelectorAll('.step-card').forEach((el, i) => {
+    el.classList.toggle('active', i === currentStep);
+  });
+  renderProgress();
+  if (currentStep === STEPS.length - 1) generateOutput();
+  updateValidation();
+}
+
+function nextStep() {
+  if (currentStep < STEPS.length - 1) {
+    currentStep++;
+    showStep();
+    saveDraft();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    showStep();
+  }
+}
+
+function startOver() {
+  formData = {};
+  currentStep = 0;
+  document.querySelectorAll('.chip.selected, .toggle-btn.selected').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('input[type="text"], textarea').forEach(el => el.value = '');
+  localStorage.removeItem('agents-md-wizard-draft');
+  showStep();
+}
+
+// ─── Chip / Toggle logic ─────────────────────────────────────────────
+function initChips() {
+  document.querySelectorAll('.chip-group, .toggle-group').forEach(group => {
+    const field = group.dataset.field;
+    const mode = group.dataset.mode;
+    group.querySelectorAll('.chip, .toggle-btn').forEach(chip => {
+      chip.addEventListener('click', () => {
+        if (mode === 'single') {
+          group.querySelectorAll('.chip, .toggle-btn').forEach(c => c.classList.remove('selected'));
+          chip.classList.add('selected');
+          formData[field] = chip.dataset.value;
+        } else {
+          chip.classList.toggle('selected');
+          const selected = [...group.querySelectorAll('.selected')].map(c => c.dataset.value);
+          formData[field] = selected;
+        }
+        saveDraft();
+        updateValidation();
+      });
+    });
+  });
+
+  // Text inputs
+  document.querySelectorAll('input[type="text"], textarea').forEach(input => {
+    const field = input.dataset.field;
+    if (field) {
+      input.addEventListener('input', () => {
+        formData[field] = input.value;
+        saveDraft();
+      });
+    }
+  });
+}
+
+function updateValidation() {
+  const card = document.querySelector(`.step-card[data-step="${currentStep}"]`);
+  if (!card) return;
+  const nextBtn = card.querySelector('.btn-next');
+  if (!nextBtn) return;
+
+  if (currentStep === 0) {
+    nextBtn.disabled = !formData.agent;
+  } else if (currentStep === 1) {
+    nextBtn.disabled = !formData.languages || formData.languages.length === 0;
+  } else {
+    nextBtn.disabled = false;
+  }
+}
+
+// ─── Draft Save/Load ────────────────────────────────────────────────
+function saveDraft() {
+  localStorage.setItem('agents-md-wizard-draft', JSON.stringify({ formData, currentStep }));
+  const indicator = document.getElementById('draftIndicator');
+  indicator.classList.add('visible');
+  setTimeout(() => indicator.classList.remove('visible'), 1500);
+}
+
+function loadDraft() {
+  const saved = localStorage.getItem('agents-md-wizard-draft');
+  if (!saved) return;
+  try {
+    const { formData: fd, currentStep: cs } = JSON.parse(saved);
+    formData = fd;
+    currentStep = cs || 0;
+
+    // Restore chip/toggle selections
+    Object.entries(formData).forEach(([field, value]) => {
+      const group = document.querySelector(`[data-field="${field}"]`);
+      if (!group) return;
+      if (group.tagName === 'INPUT' || group.tagName === 'TEXTAREA') {
+        group.value = value || '';
+        return;
+      }
+      const values = Array.isArray(value) ? value : [value];
+      group.querySelectorAll('.chip, .toggle-btn').forEach(el => {
+        if (values.includes(el.dataset.value)) el.classList.add('selected');
+      });
+    });
+
+    // Restore text inputs
+    document.querySelectorAll('input[type="text"][data-field], textarea[data-field]').forEach(el => {
+      if (formData[el.dataset.field]) el.value = formData[el.dataset.field];
+    });
+
+    showStep();
+  } catch (e) { /* ignore corrupt draft */ }
+}
+
+// ─── Output Generation ──────────────────────────────────────────────
+function generateOutput() {
+  renderOutputTab(activeFormat);
+}
+
+function renderOutputTab(format) {
+  activeFormat = format;
+  document.querySelectorAll('.output-tab').forEach(t => t.classList.toggle('active', t.dataset.format === format));
+  const code = document.getElementById('outputCode');
+
+  if (format === 'claude-md') code.textContent = generateClaudeMd();
+  else if (format === 'agents-md') code.textContent = generateAgentsMd();
+  else code.textContent = generateCursorRules();
+}
+
+// Output tab clicks
+document.getElementById('outputTabs').addEventListener('click', e => {
+  if (e.target.classList.contains('output-tab')) {
+    renderOutputTab(e.target.dataset.format);
+  }
+});
+
+function agentLabel() {
+  const labels = {
+    'claude-code': 'Claude Code', 'cursor': 'Cursor', 'cline': 'Cline',
+    'windsurf': 'Windsurf', 'copilot': 'GitHub Copilot', 'aider': 'Aider', 'other': 'AI Agent'
+  };
+  return labels[formData.agent] || 'AI Agent';
+}
+
+function listOrNone(arr) {
+  if (!arr || arr.length === 0) return null;
+  return arr.filter(v => v !== 'none');
+}
+
+function capitalFirst(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function buildStackLine() {
+  const langs = listOrNone(formData.languages);
+  const fws = listOrNone(formData.frameworks);
+  const parts = [];
+  if (langs) parts.push(langs.map(capitalFirst).join(', '));
+  if (fws) parts.push(fws.map(capitalFirst).join(', '));
+  return parts.join(' — ');
+}
+
+function buildStyleSection() {
+  const lines = [];
+  if (formData.indent) {
+    const indentMap = { '2-spaces': '2 spaces', '4-spaces': '4 spaces', 'tabs': 'tabs' };
+    lines.push(`- Indentation: ${indentMap[formData.indent]}`);
+  }
+  if (formData.naming) lines.push(`- Naming: ${formData.naming}`);
+  if (formData.typeSafety) {
+    const tsMap = { strict: 'Strict — always use explicit types', moderate: 'Moderate — infer where obvious', relaxed: 'Relaxed — types only where needed' };
+    lines.push(`- Type safety: ${tsMap[formData.typeSafety]}`);
+  }
+  if (formData.errorHandling) {
+    const ehMap = { explicit: 'Explicit error handling (Result types, try/catch)', minimal: 'Minimal — let errors propagate naturally', defensive: 'Defensive — validate inputs and handle edge cases' };
+    lines.push(`- Error handling: ${ehMap[formData.errorHandling]}`);
+  }
+  if (formData.styleRules) lines.push(`\n${formData.styleRules.trim()}`);
+  return lines.join('\n');
+}
+
+function buildBehaviorSection() {
+  const lines = [];
+  if (formData.commStyle) {
+    const csMap = { concise: 'Be concise and direct. Skip preamble.', detailed: 'Provide detailed explanations for decisions.', teaching: 'Explain concepts as you go — assume I am learning.' };
+    lines.push(`- ${csMap[formData.commStyle]}`);
+  }
+  if (formData.uncertainty) {
+    const uMap = { ask: 'When uncertain, ask before making assumptions.', 'best-guess': 'When uncertain, make your best guess and explain your reasoning.', flag: 'When uncertain, flag the uncertainty and continue.' };
+    lines.push(`- ${uMap[formData.uncertainty]}`);
+  }
+  if (formData.codeChanges) {
+    const ccMap = { minimal: 'Only change what is explicitly requested. Do not refactor surrounding code.', suggest: 'Suggest improvements when you see them, but ask before applying.', proactive: 'Proactively improve code quality when touching nearby code.' };
+    lines.push(`- ${ccMap[formData.codeChanges]}`);
+  }
+  if (formData.testExpect) {
+    const teMap = { always: 'Always write or update tests when changing code.', ask: 'Ask before writing tests.', never: 'Do not write tests unless explicitly asked.' };
+    lines.push(`- ${teMap[formData.testExpect]}`);
+  }
+  if (formData.docStyle) {
+    const dsMap = { inline: 'Add inline comments for non-obvious logic.', jsdoc: 'Add JSDoc / docstrings to public APIs.', minimal: 'Minimal documentation — code should be self-documenting.' };
+    lines.push(`- ${dsMap[formData.docStyle]}`);
+  }
+  return lines.join('\n');
+}
+
+function buildToolsSection() {
+  const sections = [];
+  const linting = listOrNone(formData.linting);
+  if (linting && linting.length) sections.push(`- Linting/formatting: ${linting.join(', ')}`);
+  const ci = listOrNone(formData.ci);
+  if (ci && ci.length) sections.push(`- CI/CD: ${ci.join(', ')}`);
+  const db = listOrNone(formData.database);
+  if (db && db.length) sections.push(`- Database: ${db.join(', ')}`);
+  const testing = listOrNone(formData.testing);
+  if (testing && testing.length) sections.push(`- Testing: ${testing.join(', ')}`);
+  if (formData.packageManager && formData.packageManager !== 'none') sections.push(`- Package manager: ${formData.packageManager}`);
+  return sections.join('\n');
+}
+
+function generateClaudeMd() {
+  const stack = buildStackLine();
+  const lines = [];
+  lines.push(`# CLAUDE.md`);
+  lines.push(``);
+  lines.push(`## Project Overview`);
+  lines.push(``);
+  if (stack) lines.push(`**Stack:** ${stack}`);
+  if (formData.repoType) lines.push(`**Repo type:** ${formData.repoType}`);
+  if (formData.directories) lines.push(`**Key directories:** ${formData.directories}`);
+  lines.push(``);
+
+  const style = buildStyleSection();
+  if (style) {
+    lines.push(`## Code Style`);
+    lines.push(``);
+    lines.push(style);
+    lines.push(``);
+  }
+
+  const behavior = buildBehaviorSection();
+  if (behavior) {
+    lines.push(`## Agent Behavior`);
+    lines.push(``);
+    lines.push(behavior);
+    lines.push(``);
+  }
+
+  const tools = buildToolsSection();
+  if (tools) {
+    lines.push(`## Tools & Infrastructure`);
+    lines.push(``);
+    lines.push(tools);
+    lines.push(``);
+  }
+
+  if (formData.customRules) {
+    lines.push(`## Additional Context`);
+    lines.push(``);
+    lines.push(formData.customRules.trim());
+    lines.push(``);
+  }
+
+  // Agent-specific build/test commands
+  const pm = formData.packageManager;
+  const testing = listOrNone(formData.testing);
+  if (pm || (testing && testing.length)) {
+    lines.push(`## Common Commands`);
+    lines.push(``);
+    if (pm === 'npm') { lines.push(`\`\`\``); lines.push(`npm install    # install deps`); lines.push(`npm run dev    # start dev server`); lines.push(`npm run build  # production build`); }
+    else if (pm === 'pnpm') { lines.push(`\`\`\``); lines.push(`pnpm install   # install deps`); lines.push(`pnpm dev       # start dev server`); lines.push(`pnpm build     # production build`); }
+    else if (pm === 'yarn') { lines.push(`\`\`\``); lines.push(`yarn install   # install deps`); lines.push(`yarn dev       # start dev server`); lines.push(`yarn build     # production build`); }
+    else if (pm === 'bun') { lines.push(`\`\`\``); lines.push(`bun install    # install deps`); lines.push(`bun run dev    # start dev server`); lines.push(`bun run build  # production build`); }
+    else if (pm === 'pip' || pm === 'uv' || pm === 'poetry') { lines.push(`\`\`\``); lines.push(`${pm} install   # install deps`); }
+    else if (pm === 'cargo') { lines.push(`\`\`\``); lines.push(`cargo build    # build`); lines.push(`cargo run      # run`); }
+    else if (pm === 'go-mod') { lines.push(`\`\`\``); lines.push(`go build ./... # build`); lines.push(`go run .       # run`); }
+    else { lines.push(`\`\`\``); }
+
+    if (testing && testing.length) {
+      const testCmds = { jest: 'npx jest', vitest: 'npx vitest', playwright: 'npx playwright test', cypress: 'npx cypress run', pytest: 'pytest', 'go-test': 'go test ./...', 'cargo-test': 'cargo test', xctest: 'xcodebuild test', junit: 'gradle test', rspec: 'bundle exec rspec' };
+      testing.forEach(t => { if (testCmds[t]) lines.push(`${testCmds[t]}${' '.repeat(Math.max(1, 15 - testCmds[t].length))}# run tests`); });
+    }
+    lines.push(`\`\`\``);
+    lines.push(``);
+  }
+
+  return lines.join('\n');
+}
+
+function generateAgentsMd() {
+  const stack = buildStackLine();
+  const lines = [];
+  lines.push(`# AGENTS.md`);
+  lines.push(``);
+  lines.push(`## Overview`);
+  lines.push(``);
+  if (stack) lines.push(`This project uses **${stack}**.`);
+  if (formData.repoType) lines.push(`Repository structure: **${formData.repoType}**.`);
+  lines.push(``);
+  lines.push(`## Coding Agent Instructions`);
+  lines.push(``);
+
+  const behavior = buildBehaviorSection();
+  if (behavior) { lines.push(behavior); lines.push(``); }
+
+  const style = buildStyleSection();
+  if (style) {
+    lines.push(`## Style Guide`);
+    lines.push(``);
+    lines.push(style);
+    lines.push(``);
+  }
+
+  const tools = buildToolsSection();
+  if (tools) {
+    lines.push(`## Tooling`);
+    lines.push(``);
+    lines.push(tools);
+    lines.push(``);
+  }
+
+  if (formData.directories) {
+    lines.push(`## Project Structure`);
+    lines.push(``);
+    lines.push(`Key directories: ${formData.directories}`);
+    lines.push(``);
+  }
+
+  if (formData.customRules) {
+    lines.push(`## Notes`);
+    lines.push(``);
+    lines.push(formData.customRules.trim());
+    lines.push(``);
+  }
+
+  return lines.join('\n');
+}
+
+function generateCursorRules() {
+  const stack = buildStackLine();
+  const lines = [];
+
+  if (stack) lines.push(`You are working on a ${stack} project.`);
+  if (formData.repoType) lines.push(`This is a ${formData.repoType} repository.`);
+  lines.push(``);
+
+  const behavior = buildBehaviorSection();
+  if (behavior) {
+    lines.push(`## Behavior`);
+    lines.push(``);
+    lines.push(behavior);
+    lines.push(``);
+  }
+
+  const style = buildStyleSection();
+  if (style) {
+    lines.push(`## Code Style`);
+    lines.push(``);
+    lines.push(style);
+    lines.push(``);
+  }
+
+  const tools = buildToolsSection();
+  if (tools) {
+    lines.push(`## Tools`);
+    lines.push(``);
+    lines.push(tools);
+    lines.push(``);
+  }
+
+  if (formData.directories) {
+    lines.push(`## Project Structure`);
+    lines.push(``);
+    lines.push(`Key directories: ${formData.directories}`);
+    lines.push(``);
+  }
+
+  if (formData.customRules) {
+    lines.push(formData.customRules.trim());
+    lines.push(``);
+  }
+
+  return lines.join('\n');
+}
+
+// ─── Copy / Download ─────────────────────────────────────────────────
+function copyOutput() {
+  const code = document.getElementById('outputCode').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function downloadFile(format) {
+  let content, filename;
+  if (format === 'claude-md') { content = generateClaudeMd(); filename = 'CLAUDE.md'; }
+  else if (format === 'agents-md') { content = generateAgentsMd(); filename = 'AGENTS.md'; }
+  else { content = generateCursorRules(); filename = '.cursorrules'; }
+
+  const blob = new Blob([content], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Gallery ─────────────────────────────────────────────────────────
+function initGallery() {
+  const filters = ['All', ...new Set(TEMPLATES.map(t => t.filter))];
+  const filterContainer = document.getElementById('galleryFilters');
+  filterContainer.innerHTML = filters.map(f =>
+    `<button class="gallery-filter ${f === 'All' ? 'active' : ''}" data-filter="${f}">${capitalFirst(f)}</button>`
+  ).join('');
+
+  filterContainer.addEventListener('click', e => {
+    if (!e.target.classList.contains('gallery-filter')) return;
+    filterContainer.querySelectorAll('.gallery-filter').forEach(f => f.classList.remove('active'));
+    e.target.classList.add('active');
+    renderGallery(e.target.dataset.filter);
+  });
+
+  renderGallery('All');
+}
+
+function renderGallery(filter) {
+  const grid = document.getElementById('galleryGrid');
+  const items = filter === 'All' ? TEMPLATES : TEMPLATES.filter(t => t.filter === filter);
+  grid.innerHTML = items.map((t, i) => `
+    <div class="gallery-card" onclick="loadTemplate(${TEMPLATES.indexOf(t)})">
+      <h3>${t.name}</h3>
+      <div class="gallery-stack">${t.stack}</div>
+      <div class="gallery-preview">${t.data.agent === 'claude-code' ? 'Claude Code' : capitalFirst(t.data.agent)} · ${t.data.repoType} · ${(t.data.languages || []).join(', ')}</div>
+    </div>
+  `).join('');
+}
+
+function loadTemplate(index) {
+  const template = TEMPLATES[index];
+  formData = { ...template.data };
+
+  // Clear all selections
+  document.querySelectorAll('.chip.selected, .toggle-btn.selected').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('input[type="text"], textarea').forEach(el => el.value = '');
+
+  // Apply selections
+  Object.entries(formData).forEach(([field, value]) => {
+    const group = document.querySelector(`[data-field="${field}"]`);
+    if (!group) return;
+    if (group.tagName === 'INPUT' || group.tagName === 'TEXTAREA') {
+      group.value = value || '';
+      return;
+    }
+    const values = Array.isArray(value) ? value : [value];
+    group.querySelectorAll('.chip, .toggle-btn').forEach(el => {
+      if (values.includes(el.dataset.value)) el.classList.add('selected');
+    });
+  });
+
+  currentStep = STEPS.length - 1;
+  showStep();
+  saveDraft();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─── Boot ────────────────────────────────────────────────────────────
+init();
+</script>
+
+</body>
+</html>
